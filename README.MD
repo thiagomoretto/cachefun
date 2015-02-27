@@ -1,6 +1,8 @@
 j8cache
 =
 
+![](https://travis-ci.org/thiagomoretto/j8cache.svg)
+
 A early stage cache library for Java 8 applications, created to deliver a delightful programming interface, performance, focusing in bulk operations to maximize throughput and without any pretensions to implement JSR107.
 
 This is being done from scratch, made from the experience of previously successful cache libraries, with the similar approach, that is running well and delivering cached data to one of the biggest LATAM e-commerce site, but targeted to Java 7 and not open-sourced.
