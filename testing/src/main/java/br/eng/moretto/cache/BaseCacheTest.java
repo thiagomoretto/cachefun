@@ -39,12 +39,16 @@ abstract public class BaseCacheTest {
 
     @Test
     public void testGetWithFetchOne() throws Exception {
-        cache.put(d("BasicGet:Item1"), new Item("BasicGet:Item1"));
-        final Value<Item> value = cache.get(d("BasicGet:Item1"), id -> new Value<BaseCacheTest.Item>(id, new Item("BasicGet:Item1")));
+        cache.put(d("BasicGetFetchOne:Item1"), new Item("BasicGetFetchOne:Item1"));
+        final Value<Item> value = cache.get(d("BasicGetFetchOne:Item1"),
+                v -> v.collect(new Item("BasicGetFetchOne:Item1")));
 
         assertNotNull(value);
         assertTrue(value.isPresent());
-        assertEquals("BasicGet:Item1", value.getValue().getName());
+        assertEquals("BasicGetFetchOne:Item1", value.getValue().getName());
+
+        // just check again.
+        assertNotNull(cache.get(d("BasicGetFetchOne:Item1")));
     }
 
     @Test
@@ -52,9 +56,9 @@ abstract public class BaseCacheTest {
         cache.put(d("BasicGetAll:Item1"), new Item("BasicGetAll:Item1"));
         cache.put(d("BasicGetAll:Item2"), new Item("BasicGetAll:Item2"));
 
-        final Values<Item> values = cache.getAll(
-                    Arrays.asList(d("BasicGetAll:Item1"), d("BasicGetAll:Item2"),
-                                        d("BasicGetAll:ItemNonExistent")));
+        final Collection<String> keys = Arrays.asList( //
+                d("BasicGetAll:Item1"), d("BasicGetAll:Item2"), d("BasicGetAll:ItemNonExistent"));
+        final Values<Item> values = cache.getAll(keys);
 
         assertEquals(3, values.size());
         assertEquals(2, values.stream().filter(v -> v.isPresent()).count());
@@ -67,15 +71,15 @@ abstract public class BaseCacheTest {
         cache.put(d("FetchMany:Item1"), new Item("Item1"));
         cache.put(d("FetchMany:Item2"), new Item("Item2"));
 
-        final FetchMany<Item> fetcher = (ids, collector) -> {
-            collector.collect(d("FetchMany:Item3"), new Item("Item3"));
+        final FetchMany<Item> fetcher = (values) -> {
+            values.collect(d("FetchMany:Item3"), new Item("Item3"));
         };
 
-        assertEquals(3,
-            cache.getAll(Arrays.asList(d("FetchMany:Item1"), d("FetchMany:Item2"), d("FetchMany:Item3")), fetcher)
-                .stream()
-                .filter(v -> v.isPresent())
-                .count());
+        assertEquals(3, //
+                cache.getAll(Arrays.asList(d("FetchMany:Item1"), d("FetchMany:Item2"), d("FetchMany:Item3")), fetcher) //
+                        .stream() //
+                        .filter(v -> v.isPresent()) //
+                        .count());
     }
 
     @Test
@@ -83,25 +87,25 @@ abstract public class BaseCacheTest {
         cache.put(d("FetchOne:Item1"), new Item("Item1"));
         cache.put(d("FetchOne:Item2"), new Item("Item2"));
 
-        final FetchOne<Item> fetchOne = (id) -> {
-            if(d("FetchOne:Item3").equals(String.valueOf(id))) {
-                return new Value<Item>(id, new Item("Item3"));
+        final FetchOne<Item> fetchOne = (v) -> {
+            if (d("FetchOne:Item3").equals(String.valueOf(v.getKey()))) {
+                v.collect(new Item("Item3"));
             } else {
-                return new Value<Item>(id); // Missing object.
+                v.collect(null); // Missing object, or just no call this method.
             }
         };
 
         final Collection<String> ids //
-            = Arrays.asList("FetchOne:Item1", "FetchOne:Item2", "FetchOne:Item3", "FetchOne:Item4") //
-                    .stream() //
-                    .map(k -> new StringBuilder(prefix).append(k).toString()) //
-                    .collect(Collectors.toList());
+        = Arrays.asList("FetchOne:Item1", "FetchOne:Item2", "FetchOne:Item3", "FetchOne:Item4") //
+                .stream() //
+                .map(k -> new StringBuilder(prefix).append(k).toString()) //
+                .collect(Collectors.toList());
 
         assertEquals(3, //
                 cache.getAll(ids, fetchOne) //
-                    .stream() //
-                    .filter(v -> v.isPresent()) //
-                    .count());
+                        .stream() //
+                        .filter(v -> v.isPresent()) //
+                        .count());
     }
 
     @Test
@@ -112,7 +116,7 @@ abstract public class BaseCacheTest {
 
     private void runGetAllBench(final String name, final int nSamples) {
         final Collection<String> ids = new ArrayList<>();
-        for(int sample = 0;sample < nSamples; sample++) {
+        for (int sample = 0; sample < nSamples; sample++) {
             String id;
             ids.add(id = d("FetchN:Item" + sample));
             cache.put(id, new Item("Item" + sample));
@@ -123,16 +127,16 @@ abstract public class BaseCacheTest {
         final Values<Item> values = cache.getAll(ids);
 
         final long ns = System.nanoTime() - initial;
-        final long ms = ns/1_000_000;
+        final long ms = ns / 1_000_000;
 
-        assertEquals(nSamples,
-                values
-                    .stream()
-                    .filter(v -> v.isPresent())
-                    .count());
+        assertEquals(nSamples, //
+                values //
+                .stream() //
+                        .filter(v -> v.isPresent()) //
+                        .count());
 
-        System.out.println("#runGetAllBench (samples=" + nSamples + "): '" + name+ "' = " + ns + "ns / " + ms + "ms");
-        System.out.println("#runGetAllBench " + nSamples / (ms/100.0) + " op/s");
+        System.out.println("#runGetAllBench (samples=" + nSamples + "): '" + name + "' = " + ns + "ns / " + ms + "ms");
+        System.out.println("#runGetAllBench " + nSamples / (ms / 100.0) + " op/s");
     }
 
     abstract protected CacheOperations getCacheOperationsProvider();
@@ -146,7 +150,7 @@ abstract public class BaseCacheTest {
     // Fixtures
 
     static class Item {
-        String name;
+        private String name;
 
         public Item() {
             super();

@@ -1,7 +1,7 @@
 package br.eng.moretto.cache;
 
 
-public class Value<T> {
+public class Value<T> implements ValueCollector<T> {
     static Value<Void> voidValue = new Value<Void>(null, null);
 
     public static Value<Void> getVoidValue() {
@@ -48,26 +48,36 @@ public class Value<T> {
     public int hashCode() {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ((key == null) ? 0 : key.hashCode());
+        result = prime * result + (key == null ? 0 : key.hashCode());
         return result;
     }
 
     @Override
     public boolean equals(final Object obj) {
-        if (this == obj)
+        if (this == obj) {
             return true;
-        if (obj == null)
+        }
+        if (obj == null) {
             return false;
-        if (getClass() != obj.getClass())
+        }
+        if (getClass() != obj.getClass()) {
             return false;
+        }
         @SuppressWarnings("rawtypes")
         final
         Value other = (Value) obj;
         if (key == null) {
-            if (other.key != null)
+            if (other.key != null) {
                 return false;
-        } else if (!key.equals(other.key))
+            }
+        } else if (!key.equals(other.key)) {
             return false;
+        }
         return true;
+    }
+
+    @Override
+    public void collect(final T value) {
+        setValue(value);
     }
 }
