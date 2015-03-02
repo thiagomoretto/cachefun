@@ -5,15 +5,17 @@ import java.util.stream.Collectors;
 
 import br.eng.moretto.cache.ops.CacheOperations;
 
-public class J8Cache implements Cache {
+public class J8Cache<K, T> implements Cache<K, T> {
     private final CacheOperations cacheOperations;
+    private final Class<T> clazz;
 
-    public J8Cache(final CacheOperations cacheOperations) {
+    public J8Cache(final CacheOperations cacheOperations, final Class<T> clazz) {
         this.cacheOperations = cacheOperations;
+        this.clazz = clazz;
     }
 
     @Override
-    public <T> Value<T> get(final Object id, final Class<T> clazz) {
+    public Value<T> get(final K id) {
         return cacheOperations.get(id, clazz);
     }
 
@@ -23,13 +25,13 @@ public class J8Cache implements Cache {
     }
 
     @Override
-    public <T> Values<T> getAll(final Collection<Object> ids, final Class<T> clazz) {
+    public Values<T> getAll(final Collection<K> ids) {
         return cacheOperations.execute((final CacheOperations ops) ->
                     ids.stream().map(id -> ops.get(id, clazz)));
     }
 
     @Override
-    public <T> Values<T> getAll(final Collection<Object> ids, final Class<T> clazz, final FetchMany<T> fetchMany) {
+    public Values<T> getAll(final Collection<K> ids, final FetchMany<T> fetchMany) {
         final Values<T> values = cacheOperations.execute((final CacheOperations ops) ->
                                         ids.stream().map(id -> ops.get(id, clazz)));
         final Values<T> missing = values.stream()
@@ -45,8 +47,8 @@ public class J8Cache implements Cache {
     }
 
     @Override
-    public <T> Values<T> getAll(final Collection<Object> ids, final Class<T> clazz, final FetchOne<T> fetchOne) {
-        final Values<T> values = getAll(ids, clazz);
+    public Values<T> getAll(final Collection<K> ids, final FetchOne<T> fetchOne) {
+        final Values<T> values = getAll(ids);
         values.stream()
                 .filter(v -> v.isEmpty())
                 .map(v -> fetchOne.fetchOne(v.getKey()))
@@ -56,5 +58,15 @@ public class J8Cache implements Cache {
                     put(v.getKey(), v.getValue());
                 });
         return values;
+    }
+
+    @Override
+    public Value<T> get(final K id, final FetchOne<T> fetchOne) {
+        final Value<T> value = cacheOperations.get(id, clazz);
+        if(value.isEmpty()) {
+            value.setValue(fetchOne.fetchOne(id).getValue());
+            put(id, value.getValue());
+        }
+        return value;
     }
 }

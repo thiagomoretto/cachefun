@@ -5,6 +5,6 @@ import br.eng.moretto.cache.Value;
 
 public interface ReadOperations {
 
-    public <T> Value<T> get(Object id, Class<T> klass);
+    public <K, T> Value<T> get(K id, Class<T> klass);
 
 }

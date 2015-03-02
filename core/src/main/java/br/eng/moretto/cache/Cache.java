@@ -2,16 +2,18 @@ package br.eng.moretto.cache;
 
 import java.util.Collection;
 
-public interface Cache {
+public interface Cache<K, T> {
 
-    public <T> Value<T> get(final Object id, final Class<T> clazz);
+    public Value<T> get(final K id);
 
-    public void put(final Object id, final Object object);
+    public Value<T> get(final K id, final FetchOne<T> fetchOne);
 
-    public <T> Values<T> getAll(final Collection<Object> ids, final Class<T> clazz);
+    public void put(final K id, final T object);
 
-    public <T> Values<T> getAll(final Collection<Object> ids, final Class<T> clazz, final FetchMany<T> fetchMany);
+    public Values<T> getAll(final Collection<K> ids);
 
-    public <T> Values<T> getAll(final Collection<Object> ids, final Class<T> clazz, final FetchOne<T> fetchOne);
+    public Values<T> getAll(final Collection<K> ids, final FetchMany<T> fetchMany);
+
+    public Values<T> getAll(final Collection<K> ids, final FetchOne<T> fetchOne);
 
 }

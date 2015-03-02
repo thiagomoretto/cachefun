@@ -16,21 +16,31 @@ import org.junit.Test;
 import br.eng.moretto.cache.ops.CacheOperations;
 
 abstract public class BaseCacheTest {
-    private Cache cache;
+    private Cache<String, Item> cache;
     private final Random random = new Random();
     private String prefix;
     private final int samples = 5_000;
 
     @Before
     public void init() {
-        cache = new J8Cache(getCacheOperationsProvider());
+        cache = new J8Cache<String, Item>(getCacheOperationsProvider(), Item.class);
         prefix = String.valueOf(random.nextInt());
     }
 
     @Test
     public void testGet() throws Exception {
         cache.put(d("BasicGet:Item1"), new Item("BasicGet:Item1"));
-        final Value<Item> value = cache.get(d("BasicGet:Item1"), Item.class);
+        final Value<Item> value = cache.get(d("BasicGet:Item1"));
+
+        assertNotNull(value);
+        assertTrue(value.isPresent());
+        assertEquals("BasicGet:Item1", value.getValue().getName());
+    }
+
+    @Test
+    public void testGetWithFetchOne() throws Exception {
+        cache.put(d("BasicGet:Item1"), new Item("BasicGet:Item1"));
+        final Value<Item> value = cache.get(d("BasicGet:Item1"), id -> new Value<BaseCacheTest.Item>(id, new Item("BasicGet:Item1")));
 
         assertNotNull(value);
         assertTrue(value.isPresent());
@@ -44,7 +54,7 @@ abstract public class BaseCacheTest {
 
         final Values<Item> values = cache.getAll(
                     Arrays.asList(d("BasicGetAll:Item1"), d("BasicGetAll:Item2"),
-                                        d("BasicGetAll:ItemNonExistent")), Item.class);
+                                        d("BasicGetAll:ItemNonExistent")));
 
         assertEquals(3, values.size());
         assertEquals(2, values.stream().filter(v -> v.isPresent()).count());
@@ -62,7 +72,7 @@ abstract public class BaseCacheTest {
         };
 
         assertEquals(3,
-            cache.getAll(Arrays.asList(d("FetchMany:Item1"), d("FetchMany:Item2"), d("FetchMany:Item3")), Item.class, fetcher)
+            cache.getAll(Arrays.asList(d("FetchMany:Item1"), d("FetchMany:Item2"), d("FetchMany:Item3")), fetcher)
                 .stream()
                 .filter(v -> v.isPresent())
                 .count());
@@ -81,15 +91,16 @@ abstract public class BaseCacheTest {
             }
         };
 
-        final Collection<Object> ids = Arrays.asList(
-                                    "FetchOne:Item1", "FetchOne:Item2", "FetchOne:Item3", "FetchOne:Item4")
-                                    .stream().map(k -> new StringBuilder(prefix).append(k))
-                                    .collect(Collectors.toList());
+        final Collection<String> ids //
+            = Arrays.asList("FetchOne:Item1", "FetchOne:Item2", "FetchOne:Item3", "FetchOne:Item4") //
+                    .stream() //
+                    .map(k -> new StringBuilder(prefix).append(k).toString()) //
+                    .collect(Collectors.toList());
 
-        assertEquals(3,
-                cache.getAll(ids, Item.class, fetchOne)
-                    .stream()
-                    .filter(v -> v.isPresent())
+        assertEquals(3, //
+                cache.getAll(ids, fetchOne) //
+                    .stream() //
+                    .filter(v -> v.isPresent()) //
                     .count());
     }
 
@@ -100,7 +111,7 @@ abstract public class BaseCacheTest {
     }
 
     private void runGetAllBench(final String name, final int nSamples) {
-        final Collection<Object> ids = new ArrayList<>();
+        final Collection<String> ids = new ArrayList<>();
         for(int sample = 0;sample < nSamples; sample++) {
             String id;
             ids.add(id = d("FetchN:Item" + sample));
@@ -109,7 +120,7 @@ abstract public class BaseCacheTest {
 
         final long initial = System.nanoTime();
 
-        final Values<Item> values = cache.getAll(ids, Item.class);
+        final Values<Item> values = cache.getAll(ids);
 
         final long ns = System.nanoTime() - initial;
         final long ms = ns/1_000_000;
@@ -121,7 +132,7 @@ abstract public class BaseCacheTest {
                     .count());
 
         System.out.println("#runGetAllBench (samples=" + nSamples + "): '" + name+ "' = " + ns + "ns / " + ms + "ms");
-        System.out.println("#runGetAllBench " + (nSamples / (ms/100.0)) + " op/s");
+        System.out.println("#runGetAllBench " + nSamples / (ms/100.0) + " op/s");
     }
 
     abstract protected CacheOperations getCacheOperationsProvider();
@@ -158,24 +169,29 @@ abstract public class BaseCacheTest {
         public int hashCode() {
             final int prime = 31;
             int result = 1;
-            result = prime * result + ((name == null) ? 0 : name.hashCode());
+            result = prime * result + (name == null ? 0 : name.hashCode());
             return result;
         }
 
         @Override
         public boolean equals(final Object obj) {
-            if (this == obj)
+            if (this == obj) {
                 return true;
-            if (obj == null)
+            }
+            if (obj == null) {
                 return false;
-            if (getClass() != obj.getClass())
+            }
+            if (getClass() != obj.getClass()) {
                 return false;
+            }
             final Item other = (Item) obj;
             if (name == null) {
-                if (other.name != null)
+                if (other.name != null) {
                     return false;
-            } else if (!name.equals(other.name))
+                }
+            } else if (!name.equals(other.name)) {
                 return false;
+            }
             return true;
         }
 

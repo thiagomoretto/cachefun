@@ -24,7 +24,7 @@ public class RedisCacheOperations implements CacheOperations {
     }
 
     @Override
-    public <T> Value<T> get(final Object id, final Class<T> klass) {
+    public <K, T> Value<T> get(final K id, final Class<T> klass) {
         Jedis jedis = null;
         try {
             jedis = pool.getResource();
@@ -101,7 +101,7 @@ public class RedisCacheOperations implements CacheOperations {
         }
 
         @Override
-        public <T> Value<T> get(final Object key, final Class<T> klass) {
+        public <K, T> Value<T> get(final K key, final Class<T> klass) {
             return new JedisValue<T, String>(key, pipeline.get(String.valueOf(key)), serializer, klass);
         }
 
