@@ -20,15 +20,11 @@ public class Value<T> implements ValueCollector<T> {
         this.value = value;
     }
 
-    public void setKey(final Object key) {
-        this.key = key;
-    }
-
     public Object getKey() {
         return key;
     }
 
-    public void setValue(final T value) {
+    protected void setValue(final T value) {
         this.value = value;
     }
 
