@@ -1,32 +1,26 @@
 package br.eng.moretto.cache.redis;
 
-import br.eng.moretto.cache.Serializer;
+import br.eng.moretto.cache.Mapper;
 import br.eng.moretto.cache.Value;
 
-public class JedisValue<T, J> extends Value<T> {
-    final private redis.clients.jedis.Response<J> jedisResponse;
-    final private Serializer serializer;
-    final private Class<T> klass;
+public class JedisValue<T> extends Value<T> {
+    final private redis.clients.jedis.Response<String> jedisResponse;
+    final private Mapper<T> mapper;
 
-    public JedisValue(final Object key, final redis.clients.jedis.Response<J> jedisResponse,
-                final Serializer serializer, final Class<T> klass) {
+    public JedisValue(final Object key, final redis.clients.jedis.Response<String> jedisResponse, final Mapper<T> mapper) {
         super(key);
         this.jedisResponse = jedisResponse;
-        this.serializer = serializer;
-        this.klass = klass;
+        this.mapper = mapper;
     }
 
     @Override
     public T getValue() {
         T value = super.getValue(); // Checks if we already have it.
         if(value == null) {
-            final J jedisData = jedisResponse.get();
-            if(jedisData instanceof String) {
-                final String json = (String) jedisResponse.get();
-                if(json != null) {
-                    value = serializer.deserialize(json, klass);
-                    setValue(value);
-                }
+            final String jedisData = jedisResponse.get();
+            if(jedisData != null) {
+                value = mapper.read(jedisData);
+                collect(value);
             }
         }
         return value;

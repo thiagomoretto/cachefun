@@ -1,19 +1,20 @@
 package br.eng.moretto.cache.serializers;
 
 
-import java.util.Collection;
-
 import org.boon.json.JsonParserFactory;
 import org.boon.json.JsonSerializerFactory;
 import org.boon.json.ObjectMapper;
 import org.boon.json.implementation.ObjectMapperImpl;
 
-import br.eng.moretto.cache.Serializer;
+import br.eng.moretto.cache.Mapper;
 
-public class BoonSerializer implements Serializer {
+public class BoonMapper<T> implements Mapper<T> {
     final ObjectMapper objectMapper;
+    private final Class<T> clazz;
 
-    public BoonSerializer() {
+    public BoonMapper(final Class<T> clazz) {
+        this.clazz = clazz;
+
         final JsonParserFactory parserFactory = new JsonParserFactory();
         parserFactory.setUseAnnotations(true);
         parserFactory.setRespectIgnore(true);
@@ -28,18 +29,13 @@ public class BoonSerializer implements Serializer {
     }
 
     @Override
-    public String serialize(final Object object) {
+    public String write(final T object) {
         return objectMapper.writeValueAsString(object);
     }
 
     @Override
-    public <T> T deserialize(final String json, final Class<T> klass) {
-        return objectMapper.readValue(json, klass);
-    }
-
-    @Override
-    public <T, C extends Collection<T>> C deserialize(final String json, final Class<T> klass, final Class<C> container) {
-        return objectMapper.readValue(json, container, klass);
+    public T read(final String json) {
+        return objectMapper.readValue(json, clazz);
     }
 
     @Override

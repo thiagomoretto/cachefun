@@ -9,27 +9,25 @@ import redis.clients.jedis.JedisPool;
 import redis.clients.jedis.Pipeline;
 import redis.clients.jedis.exceptions.JedisConnectionException;
 import br.eng.moretto.cache.Commands;
-import br.eng.moretto.cache.Serializer;
+import br.eng.moretto.cache.Mapper;
 import br.eng.moretto.cache.Value;
 import br.eng.moretto.cache.Values;
 import br.eng.moretto.cache.ops.CacheOperations;
 
 public class RedisCacheOperations implements CacheOperations {
     final private JedisPool pool;
-    final private Serializer serializer;
 
-    public RedisCacheOperations(final JedisPool jedisPool, final Serializer serializer) {
+    public RedisCacheOperations(final JedisPool jedisPool) {
         this.pool = jedisPool;
-        this.serializer = serializer;
     }
 
     @Override
-    public <K, T> Value<T> get(final K id, final Class<T> klass) {
+    public <K, T> Value<T> get(final K id, final Mapper<T> mapper) {
         Jedis jedis = null;
         try {
             jedis = pool.getResource();
             final String data = jedis.get(String.valueOf(id));
-            return new Value<T>(id, serializer.deserialize(data, klass));
+            return new Value<T>(id, data != null ? mapper.read(data) : null);
         } catch(final JedisConnectionException jce) {
             if(jedis != null) {
                 pool.returnBrokenResource(jedis);
@@ -45,11 +43,11 @@ public class RedisCacheOperations implements CacheOperations {
     }
 
     @Override
-    public Value<Void> put(final Object id, final Object object) {
+    public <K, T> Value<Void> put(final K id, final T object, final Mapper<T> mapper) {
         Jedis jedis = null;
         try {
             jedis = pool.getResource();
-            jedis.set(String.valueOf(id), serializer.serialize(object));
+            jedis.set(String.valueOf(id), mapper.write(object));
         } catch(final JedisConnectionException jce) {
             if(jedis != null) {
                 pool.returnBrokenResource(jedis);
@@ -61,7 +59,7 @@ public class RedisCacheOperations implements CacheOperations {
                 jedis = null;
             }
         }
-        return new Value<Void>(null);
+        return new Value<Void>(id, null);
     }
 
     @Override
@@ -71,7 +69,7 @@ public class RedisCacheOperations implements CacheOperations {
             jedis = pool.getResource();
             final Pipeline pipeline = jedis.pipelined();
             final Stream<Value<T>> stream
-                    = commands.execute(new PipelinedOperations(pipeline, serializer));
+                    = commands.execute(new PipelinedOperations(pipeline));
             final Collection<Value<T>> values = stream.collect(Collectors.toList());
             pipeline.sync();
             return new Values<>(values);
@@ -91,24 +89,21 @@ public class RedisCacheOperations implements CacheOperations {
 
     // Asynchronous operations
     final private class PipelinedOperations implements CacheOperations {
-
-        final private Serializer serializer;
         final private Pipeline pipeline;
 
-        public PipelinedOperations(final Pipeline pipeline, final Serializer serializer) {
+        public PipelinedOperations(final Pipeline pipeline) {
             this.pipeline = pipeline;
-            this.serializer = serializer;
         }
 
         @Override
-        public <K, T> Value<T> get(final K key, final Class<T> klass) {
-            return new JedisValue<T, String>(key, pipeline.get(String.valueOf(key)), serializer, klass);
+        public <K, T> Value<T> get(final K key, final Mapper<T> mapper) {
+            return new JedisValue<T>(key, pipeline.get(String.valueOf(key)), mapper);
         }
 
         @Override
-        public Value<Void> put(final Object key, final Object value) {
-            final String data = serializer.serialize(value);
-            return new JedisValue<>(key, pipeline.set(String.valueOf(key), data), null, Void.class);
+        public <K, T> Value<Void> put(final K key, final T object, final Mapper<T> mapper) {
+            pipeline.set(String.valueOf(key), mapper.write(object));
+            return Value.getVoidValue();
         }
 
         @Override

@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
 
@@ -14,16 +15,26 @@ import org.junit.Before;
 import org.junit.Test;
 
 import br.eng.moretto.cache.ops.CacheOperations;
+import br.eng.moretto.cache.serializers.BoonCollectionMapper;
+import br.eng.moretto.cache.serializers.BoonMapper;
+import br.eng.moretto.cache.serializers.ContainerizedType;
 
 abstract public class BaseCacheTest {
     private Cache<String, Item> cache;
+    private Cache<String, Collection<Item>> cacheItems;
+    private final CacheOperations cacheOperations = getCacheOperationsProvider();
     private final Random random = new Random();
     private String prefix;
     private final int samples = 5_000;
 
     @Before
     public void init() {
-        cache = new J8Cache<String, Item>(getCacheOperationsProvider(), Item.class);
+        cache = new J8Cache<String, Item>(cacheOperations, new BoonMapper<Item>(Item.class));
+
+        final Mapper<Collection<Item>> listMapper
+            = new BoonCollectionMapper<Item, Collection<Item>>(ContainerizedType.listOfClass(Item.class));
+
+        cacheItems = new J8Cache<String, Collection<Item>>(cacheOperations, listMapper);
         prefix = String.valueOf(random.nextInt());
     }
 
@@ -35,6 +46,25 @@ abstract public class BaseCacheTest {
         assertNotNull(value);
         assertTrue(value.isPresent());
         assertEquals("BasicGet:Item1", value.getValue().getName());
+    }
+
+    @Test
+    public void testGetCollection() throws Exception {
+        final Item item1 = new Item("BasicGetCollection:SubItem1");
+        final Item item2 = new Item("BasicGetCollection:SubItem2");
+        final List<Item> items = Arrays.asList(item1, item2);
+
+        cacheItems.put(d("BasicGetCollection:Item1"), items);
+
+        final Value<Collection<Item>> value = cacheItems.get(d("BasicGetCollection:Item1"));
+
+        assertNotNull(value);
+        assertTrue(value.isPresent());
+
+        final List<Item> loadedItems = (List<Item>) value.getValue();
+        assertEquals(2, loadedItems.size());
+        assertEquals(item1, loadedItems.get(0));
+        assertEquals(item2, loadedItems.get(1));
     }
 
     @Test
