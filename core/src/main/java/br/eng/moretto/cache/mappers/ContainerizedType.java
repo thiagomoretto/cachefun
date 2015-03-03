@@ -1,4 +1,4 @@
-package br.eng.moretto.cache.serializers;
+package br.eng.moretto.cache.mappers;
 
 import java.util.Collection;
 import java.util.List;

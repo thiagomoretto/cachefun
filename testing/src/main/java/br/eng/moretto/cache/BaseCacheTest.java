@@ -14,10 +14,10 @@ import java.util.stream.Collectors;
 import org.junit.Before;
 import org.junit.Test;
 
+import br.eng.moretto.cache.mappers.BoonCollectionMapper;
+import br.eng.moretto.cache.mappers.BoonMapper;
+import br.eng.moretto.cache.mappers.ContainerizedType;
 import br.eng.moretto.cache.ops.CacheOperations;
-import br.eng.moretto.cache.serializers.BoonCollectionMapper;
-import br.eng.moretto.cache.serializers.BoonMapper;
-import br.eng.moretto.cache.serializers.ContainerizedType;
 
 abstract public class BaseCacheTest {
     private Cache<String, Item> cache;

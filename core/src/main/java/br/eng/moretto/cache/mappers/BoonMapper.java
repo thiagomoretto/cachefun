@@ -1,4 +1,4 @@
-package br.eng.moretto.cache.serializers;
+package br.eng.moretto.cache.mappers;
 
 
 import org.boon.json.JsonParserFactory;
@@ -8,12 +8,12 @@ import org.boon.json.implementation.ObjectMapperImpl;
 
 import br.eng.moretto.cache.Mapper;
 
-public class BoonCollectionMapper<T, C> implements Mapper<C> {
+public class BoonMapper<T> implements Mapper<T> {
     final ObjectMapper objectMapper;
-    private final ContainerizedType<T> type;
+    private final Class<T> clazz;
 
-    public BoonCollectionMapper(final ContainerizedType<T> type) {
-        this.type = type;
+    public BoonMapper(final Class<T> clazz) {
+        this.clazz = clazz;
 
         final JsonParserFactory parserFactory = new JsonParserFactory();
         parserFactory.setUseAnnotations(true);
@@ -29,21 +29,12 @@ public class BoonCollectionMapper<T, C> implements Mapper<C> {
     }
 
     @Override
-    public String write(final C object) {
+    public String write(final T object) {
         return objectMapper.writeValueAsString(object);
     }
 
-    @Override @SuppressWarnings("unchecked")
-    public C read(final String json) {
-         return (C) objectMapper.readValue(json, type.getContainer(), type.getType());
-    }
-
     @Override
-    public String toString() {
-        final StringBuilder builder = new StringBuilder();
-        builder.append("BoonSerializer [objectMapper=");
-        builder.append(objectMapper);
-        builder.append("]");
-        return builder.toString();
+    public T read(final String json) {
+        return objectMapper.readValue(json, clazz);
     }
 }
