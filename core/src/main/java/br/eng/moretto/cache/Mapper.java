@@ -5,6 +5,6 @@ public interface Mapper<T> {
 
     public String write(T object);
 
-    public T read(String json);
+    public T read(String object);
 
 }

@@ -6,27 +6,29 @@ import br.eng.moretto.cache.ops.CacheOperations;
 
 public class J8Cache<K, T> implements Cache<K, T> {
     private final CacheOperations cacheOperations;
-    private final Mapper<T> mapper;
+    private final Mapper<T> valMapper;
+    private final Mapper<K> keyMapper;
 
-    public J8Cache(final CacheOperations cacheOperations, final Mapper<T> mapper) {
+    public J8Cache(final CacheOperations cacheOperations, final Mapper<K> keyMapper, final Mapper<T> valMapper) {
         this.cacheOperations = cacheOperations;
-        this.mapper = mapper;
+        this.keyMapper = keyMapper;
+        this.valMapper = valMapper;
     }
 
     @Override
     public Value<T> get(final K id) {
-        return cacheOperations.get(id, mapper);
+        return cacheOperations.get(keyMapper.write(id), valMapper);
     }
 
     @Override
     public void put(final K id, final T object) {
-        cacheOperations.put(id, object, mapper);
+        cacheOperations.put(keyMapper.write(id), object, valMapper);
     }
 
     @Override
     public Values<T> getAll(final Collection<K> ids) {
         return cacheOperations.execute(ops -> //
-                ids.stream().map(id -> ops.get(id, mapper)));
+                ids.stream().map(id -> ops.get(keyMapper.write(id), valMapper)));
     }
 
     @SuppressWarnings("unchecked")

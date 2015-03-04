@@ -29,12 +29,21 @@ abstract public class BaseCacheTest {
 
     @Before
     public void init() {
-        cache = new J8Cache<String, Item>(cacheOperations, new BoonMapper<Item>(Item.class));
+        cache = new CacheBuilder<String, Item>()
+            .setCacheOperations(cacheOperations)
+            .setKeyMapper(new StringKeyMapper())
+            .setValueMapper(new BoonMapper<Item>(Item.class))
+            .build();
 
         final Mapper<Collection<Item>> listMapper
             = new BoonCollectionMapper<Item, Collection<Item>>(ContainerizedType.listOfClass(Item.class));
 
-        cacheItems = new J8Cache<String, Collection<Item>>(cacheOperations, listMapper);
+        cacheItems = new CacheBuilder<String, Collection<Item>>()
+                .setCacheOperations(cacheOperations)
+                .setKeyMapper(new StringKeyMapper())
+                .setValueMapper(listMapper)
+                .build();
+
         prefix = String.valueOf(random.nextInt());
     }
 
