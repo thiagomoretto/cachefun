@@ -39,6 +39,9 @@ public class RedisCacheFunsTest {
         assertThat(l1l2Supplier.get())
             .isPresent() //
             .contains("Value#testL1L2UsingSupplierApi");
+
+        assertThat(l1.get(key)).isPresent();
+        assertThat(l2.get(key)).isPresent();
     }
 
     @Test
