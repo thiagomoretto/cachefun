@@ -59,7 +59,7 @@ It also has a `streamOf` method that accepts a function which you can provide th
 ```java
 Collection<String> customerIds = Arrays.asList("Customer1", "Customer2", "CustomerN")
 
-Stream<Optional<String>> customersStream = main.streamOf(ids, (id) -> {
+Stream<Optional<String>> customersStream = cache.streamOf(ids, (id) -> {
   /* 
   Loads the customer from database based on given 'id'
   */
