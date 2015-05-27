@@ -2,9 +2,11 @@ package br.eng.moretto.cache.redis;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.junit.Test;
 
@@ -63,6 +65,31 @@ public class RedisCacheFunsTest {
         assertThat(l1l2Supplier.get()) //
             .isPresent() //
             .contains("Value#testL1L2UsingFunctionApi");
+    }
+
+    @Test
+    public void testStream() throws Exception {
+        main.put("Key1", "Value1");
+        main.put("Key2", "Value2");
+        main.put("Key3", "Value3");
+
+        assertThat(main.streamOf(Arrays.asList("Key1", "Key2", "Key3"))
+            .allMatch(p -> p.isPresent()))
+            .isTrue();
+        assertThat(main.streamOf(Arrays.asList("Key1", "Key2", "Key3"))
+            .collect(Collectors.toList()))
+            .hasSize(3);
+    }
+
+    @Test
+    public void testStream2() throws Exception {
+        main.put("mKey1", "Value1");
+        // Missing mKey2
+        main.put("mKey3", "Value3");
+
+        assertThat(main.streamOf(Arrays.asList("mKey1", "mKey2", "mKey3"), (id) -> Optional.of("Value2"))
+                .collect(Collectors.toList()))
+                .hasSize(3);
     }
 
     // Caches

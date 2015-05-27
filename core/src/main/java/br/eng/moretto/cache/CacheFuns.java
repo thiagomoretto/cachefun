@@ -1,8 +1,10 @@
 package br.eng.moretto.cache;
 
+import java.util.Collection;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import br.eng.moretto.cache.ops.CacheOperations;
 
@@ -29,6 +31,11 @@ public class CacheFuns<K, T> {
         return Optional.ofNullable(cacheOperations.get(keyMapper.write(id), valMapper).getValue());
     }
 
+    public Values<T> getAll(final Collection<K> ids) {
+        return cacheOperations.execute(ops -> //
+                ids.stream().map(id -> ops.get(keyMapper.write(id), valMapper)));
+    }
+
     public void put(final K id, final T object) {
         cacheOperations.put(keyMapper.write(id), object, valMapper);
     }
@@ -46,5 +53,30 @@ public class CacheFuns<K, T> {
             }
             return val;
         };
+    }
+
+    public Stream<Optional<T>> streamOf(final Collection<K> ids) {
+        final Values<T> values = cacheOperations.execute(ops -> //
+                ids.stream() //
+                   .map(id -> ops.get(keyMapper.write(id), valMapper)));
+        return values.stream().map(t -> Optional.ofNullable(t.getValue()));
+    }
+
+    @SuppressWarnings("unchecked")
+    public Stream<Optional<T>> streamOf(final Collection<K> ids, final Function<K, Optional<T>> fetch) {
+        final Values<T> values = getAll(ids);
+        values.stream() //
+                .filter(v -> v.isEmpty()) //
+                .map(v -> { //
+                    fetch.apply((K) v.getKey()) //
+                         .ifPresent(k -> v.collect(k));
+                    return v;
+                }) //
+                .filter(v -> v.isPresent()) //
+                .forEach(v -> { //
+                            values.collect(v.getKey(), v.getValue()); //
+                            put((K) v.getKey(), v.getValue()); //
+                        });
+        return values.stream().map(t -> Optional.ofNullable(t.getValue()));
     }
 }
