@@ -29,6 +29,20 @@ public class CacheFuns<K, T> {
         cacheOperations.put(keyMapper.write(id), object, valMapper);
     }
 
+    public Supplier<Optional<T>> get(final K id, final Supplier<Optional<T>> supplier) {
+        return () -> {
+            final Value<T> value = cacheOperations.get(keyMapper.write(id), valMapper);
+            T val = value.getValue();
+            if (val == null) {
+                val = supplier.get().get();
+                if (val != null) {
+                    put(id, val);
+                }
+            }
+            return Optional.ofNullable(val);
+        };
+    }
+
     public Supplier<Optional<T>> get(final K id, final Function<K, T> fetch) {
         return () -> {
             final Value<T> value = cacheOperations.get(keyMapper.write(id), valMapper);
