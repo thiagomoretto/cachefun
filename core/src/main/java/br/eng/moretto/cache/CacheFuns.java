@@ -57,6 +57,14 @@ public class CacheFuns<K, T> {
         };
     }
 
+    public Supplier<Stream<Optional<T>>> supplyStreamOf(final Collection<K> ids) {
+        return () -> streamOf(ids);
+    }
+
+    public Supplier<Stream<Optional<T>>> supplyStreamOf(final Collection<K> ids, final Function<K, Optional<T>> fetch) {
+        return () -> streamOf(ids, fetch);
+    }
+
     public Stream<Optional<T>> streamOf(final Collection<K> ids) {
         return getAll(ids).stream().map(t -> Optional.ofNullable(t.getValue()));
     }
@@ -64,12 +72,12 @@ public class CacheFuns<K, T> {
     public Stream<Optional<T>> streamOf(final Collection<K> ids, final Function<K, Optional<T>> fetch) {
         final Values<K, T> values = getAll(ids);
         values.stream() //
-                .filter(v -> v.isEmpty()) //
+                .filter(Value::isEmpty) //
                 .map(v -> { //
                     fetch.apply(v.getKey()).ifPresent(k -> v.collect(k));
                     return v;
                 }) //
-                .filter(v -> v.isPresent()) //
+                .filter(Value::isPresent) //
                 .forEach(v -> { //
                             values.collect(v.getKey(), v.getValue()); //
                             put(v.getKey(), v.getValue()); //

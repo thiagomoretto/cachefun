@@ -74,7 +74,7 @@ public class RedisCacheFunsTest {
         main.put("Key3", "Value3");
 
         assertThat(main.streamOf(Arrays.asList("Key1", "Key2", "Key3"))
-            .allMatch(p -> p.isPresent()))
+            .allMatch(Optional::isPresent))
             .isTrue();
         assertThat(main.streamOf(Arrays.asList("Key1", "Key2", "Key3"))
             .collect(Collectors.toList()))

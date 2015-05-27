@@ -188,7 +188,7 @@ abstract public class BaseCacheTest {
 
     // Fixtures
 
-    static class Item {
+    public static class Item {
         private String name;
 
         public Item() {
