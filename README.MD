@@ -1,7 +1,7 @@
-# j8cache
+CacheFun
+=
 
-
-![](https://travis-ci.org/thiagomoretto/j8cache.svg)
+![](https://travis-ci.org/thiagomoretto/cachefun.svg)
 
 A early stage cache library for Java 8 applications, created to deliver a delightful programming interface, performance, focusing in bulk operations to maximize throughput and without any pretensions to implement JSR107.
 
@@ -86,7 +86,7 @@ For further details and examples, take a look at the unit tests. We are working 
 
 The MIT License (MIT)
 
-Copyright (c) 2015 j8cache
+Copyright (c) 2015 cachefun
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
