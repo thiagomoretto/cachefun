@@ -25,35 +25,26 @@ public class CacheFuns<K, T> {
         this.valMapper = valMapper;
     }
 
+    public Optional<T> get(final K id) {
+        return Optional.ofNullable(cacheOperations.get(keyMapper.write(id), valMapper).getValue());
+    }
+
     public void put(final K id, final T object) {
         cacheOperations.put(keyMapper.write(id), object, valMapper);
     }
 
     public Supplier<Optional<T>> get(final K id, final Supplier<Optional<T>> supplier) {
-        return () -> {
-            final Value<T> value = cacheOperations.get(keyMapper.write(id), valMapper);
-            T val = value.getValue();
-            if (val == null) {
-                val = supplier.get().get();
-                if (val != null) {
-                    put(id, val);
-                }
-            }
-            return Optional.ofNullable(val);
-        };
+        return get(id, (_id) -> supplier.get());
     }
 
-    public Supplier<Optional<T>> get(final K id, final Function<K, T> fetch) {
+    public Supplier<Optional<T>> get(final K id, final Function<K, Optional<T>> fetch) {
         return () -> {
-            final Value<T> value = cacheOperations.get(keyMapper.write(id), valMapper);
-            T val = value.getValue();
-            if (val == null) {
+            Optional<T> val = get(id);
+            if (!val.isPresent()) {
                 val = fetch.apply(id);
-                if (val != null) {
-                    put(id, val);
-                }
+                val.ifPresent(v -> put(id, v));
             }
-            return Optional.ofNullable(val);
+            return val;
         };
     }
 }
