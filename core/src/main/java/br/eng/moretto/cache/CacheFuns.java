@@ -31,11 +31,12 @@ public class CacheFuns<K, T> {
         return Optional.ofNullable(cacheOperations.get(keyMapper.write(id), valMapper).getValue());
     }
 
-    @SuppressWarnings("unchecked")
     public Values<K, T> getAll(final Collection<K> ids) {
         return cacheOperations.execute(ops -> //
-            ids.stream().map(id ->
-                (Value<K, T>) ops.get(keyMapper.write(id), valMapper)));
+                ids.stream().map(id -> {
+                    final Value<String, T> raw = ops.get(keyMapper.write(id), valMapper);
+                    return new Value<K, T>(id, () -> raw.getValue());
+                }));
     }
 
     public void put(final K id, final T object) {
@@ -70,18 +71,15 @@ public class CacheFuns<K, T> {
     }
 
     public Stream<Optional<T>> streamOf(final Collection<K> ids, final Function<K, Optional<T>> fetch) {
-        final Values<K, T> values = getAll(ids);
-        values.stream() //
-                .filter(Value::isEmpty) //
+        return getAll(ids).stream() //
                 .map(v -> { //
-                    fetch.apply(v.getKey()).ifPresent(k -> v.collect(k));
-                    return v;
-                }) //
-                .filter(Value::isPresent) //
-                .forEach(v -> { //
-                            values.collect(v.getKey(), v.getValue()); //
-                            put(v.getKey(), v.getValue()); //
+                    if (v.isEmpty()) {
+                        fetch.apply(v.getKey()).ifPresent(k -> {
+                            v.collect(k);
+                            put(v.getKey(), v.getValue());
                         });
-        return values.stream().map(v -> Optional.ofNullable(v.getValue()));
+                    }
+                    return v;
+                }).map(v -> Optional.ofNullable(v.getValue())); //
     }
 }

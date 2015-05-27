@@ -1,10 +1,12 @@
 package br.eng.moretto.cache.redis;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Optional;
 import java.util.Random;
+import java.util.stream.Stream;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -29,7 +31,7 @@ public class RedisCacheFunsBenchmarkTest extends RedisBaseTest {
 
     @Test
     public void testGetAllWithFetchN() throws Exception {
-        runGetAllBench("warmup", 5_000);
+        runGetAllBench("warmup_1", 5_000);
         runGetAllBench("real deal", 5_000);
     }
 
@@ -43,13 +45,12 @@ public class RedisCacheFunsBenchmarkTest extends RedisBaseTest {
 
         final long initial = System.nanoTime();
 
-        assertEquals(nSamples, //
-                main.streamOf(ids) //
-                        .filter(v -> v.isPresent()) //
-                        .count());
+        final Stream<Optional<Item>> stream = main.streamOf(ids);
 
         final long ns = System.nanoTime() - initial;
         final long ms = ns / 1_000_000;
+
+        assertThat(stream.filter(v -> v.isPresent()).count()).isEqualTo(nSamples);
 
         System.out.println("RedisCacheFunsBenchmarkTest#runGetAllBench (samples=" + nSamples + "): '" + name + "' = " + ns + "ns / " + ms + "ms");
         System.out.println("RedisCacheFunsBenchmarkTest#runGetAllBench " + nSamples / (ms / 100.0) + " op/s");

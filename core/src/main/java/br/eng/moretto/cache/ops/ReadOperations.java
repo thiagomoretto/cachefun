@@ -7,6 +7,6 @@ import br.eng.moretto.cache.Value;
 
 public interface ReadOperations {
 
-    public <K, T> Value<K, T> get(K id, Mapper<T> mapper);
+    public <T> Value<String, T> get(String id, Mapper<T> mapper);
 
 }

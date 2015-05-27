@@ -22,12 +22,12 @@ public class RedisCacheOperations implements CacheOperations {
     }
 
     @Override
-    public <K, T> Value<K, T> get(final K id, final Mapper<T> mapper) {
+    public <T> Value<String, T> get(final String id, final Mapper<T> mapper) {
         Jedis jedis = null;
         try {
             jedis = pool.getResource();
             final String data = jedis.get(String.valueOf(id));
-            return new Value<K, T>(id, data != null ? mapper.read(data) : null);
+            return new Value<String, T>(id, data != null ? mapper.read(data) : null);
         } catch(final JedisConnectionException jce) {
             if(jedis != null) {
                 pool.returnBrokenResource(jedis);
@@ -39,7 +39,7 @@ public class RedisCacheOperations implements CacheOperations {
                 jedis = null;
             }
         }
-        return new Value<K, T>(id, null);
+        return new Value<String, T>(id, (T)null);
     }
 
     @Override
@@ -59,7 +59,7 @@ public class RedisCacheOperations implements CacheOperations {
                 jedis = null;
             }
         }
-        return new Value<K, Void>(id, null);
+        return new Value<K, Void>(id, (Void)null);
     }
 
     @Override
@@ -96,14 +96,14 @@ public class RedisCacheOperations implements CacheOperations {
         }
 
         @Override
-        public <K, T> Value<K, T> get(final K key, final Mapper<T> mapper) {
-            return new JedisValue<K, T>(key, pipeline.get(String.valueOf(key)), mapper);
+        public <T> Value<String, T> get(final String key, final Mapper<T> mapper) {
+            return new JedisValue<String, T>(key, pipeline.get(String.valueOf(key)), mapper);
         }
 
         @Override
         public <K, T> Value<K, Void> put(final K key, final T object, final Mapper<T> mapper) {
             pipeline.set(String.valueOf(key), mapper.write(object));
-            return new Value<K, Void>(key, null);
+            return new Value<K, Void>(key, (Void)null);
         }
 
         @Override

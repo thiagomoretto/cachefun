@@ -1,8 +1,10 @@
 package br.eng.moretto.cache;
 
+import java.util.function.Supplier;
+
 
 public class Value<K, T> implements ValueCollector<T> {
-    static Value<Void, Void> voidValue = new Value<Void, Void>(null, null);
+    static Value<Void, Void> voidValue = new Value<Void, Void>(null, (Void)null);
 
     public static Value<Void, Void> getVoidValue() {
         return voidValue;
@@ -10,14 +12,20 @@ public class Value<K, T> implements ValueCollector<T> {
 
     private K key;
     private T value;
+    private Supplier<T> deferredValue;
 
     public Value(final K key) {
-        this(key, null);
+        this(key, (T)null);
     }
 
     public Value(final K key, final T value) {
         this.key = key;
         this.value = value;
+    }
+
+    public Value(final K key, final Supplier<T> deferredValue) {
+        this.key = key;
+        this.deferredValue = deferredValue;
     }
 
     public K getKey() {
@@ -29,6 +37,10 @@ public class Value<K, T> implements ValueCollector<T> {
     }
 
     public T getValue() {
+        if(deferredValue != null && value == null) {
+            this.value = deferredValue.get();
+            this.deferredValue = null;
+        }
         return this.value;
     }
 

@@ -96,6 +96,20 @@ public class RedisCacheFunsTest {
                 .hasSize(4);
     }
 
+    @Test
+    public void testStreamSomeKeyMissingAllSources() throws Exception {
+        main.put("mKey1", "Value1");
+        // Missing mKey2
+        main.put("mKey3", "Value3");
+        // Missing mKey4 in all sources.
+
+        assertThat(main.streamOf(Arrays.asList("mKey1", "mKey2", "mKey3", "mKey4"),
+                    (id) -> Optional.ofNullable("mKey2".equals(id) ? "Value2" : null))
+                .filter(o -> o.isPresent())
+                .collect(Collectors.toList()))
+                .hasSize(3);
+    }
+
     // Caches
 
     private CacheFuns<String, String> cache(final String name) {
