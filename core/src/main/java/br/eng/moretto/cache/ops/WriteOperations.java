@@ -6,6 +6,6 @@ import br.eng.moretto.cache.Value;
 
 public interface WriteOperations {
 
-    public <K, T> Value<Void> put(K id, T object, Mapper<T> mapper);
+    public <K, T> Value<K, Void> put(K id, T object, Mapper<T> mapper);
 
 }

@@ -7,22 +7,22 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class Values<T> implements ValuesCollector<T> {
-    private final HashSet<Value<T>> rawValues;
+public class Values<K, T> implements ValuesCollector<K, T> {
+    private final HashSet<Value<K, T>> rawValues;
 
     public Values() {
-        rawValues = new HashSet<Value<T>>();
+        rawValues = new HashSet<Value<K, T>>();
     }
 
-    public Values(final Collection<? extends Value<T>> c) {
-        rawValues = new HashSet<Value<T>>(c);
+    public Values(final Collection<? extends Value<K, T>> c) {
+        rawValues = new HashSet<Value<K, T>>(c);
     }
 
     public Values(final int initialCapacity) {
-        rawValues = new HashSet<Value<T>>(initialCapacity);
+        rawValues = new HashSet<Value<K, T>>(initialCapacity);
     }
 
-    public Map<Object, T> mapOfPresentValues() {
+    public Map<K, T> mapOfPresentValues() {
         return stream()
                 .filter(v -> v.isPresent())
                 .collect(Collectors.toMap(Value::getKey, Value::getValue));
@@ -37,8 +37,8 @@ public class Values<T> implements ValuesCollector<T> {
     }
 
     @Override
-    public void collect(final Object key, final T value) {
-        for (final Value<T> wrapper : rawValues) {
+    public void collect(final K key, final T value) {
+        for (final Value<K, T> wrapper : rawValues) {
             if (wrapper.getKey().equals(key)) {
                 wrapper.setValue(value);
                 return;
@@ -46,7 +46,7 @@ public class Values<T> implements ValuesCollector<T> {
         }
     }
 
-    public void forEach(final Consumer<? super Value<T>> action) {
+    public void forEach(final Consumer<? super Value<K, T>> action) {
         rawValues.forEach(action);
     }
 
@@ -58,19 +58,19 @@ public class Values<T> implements ValuesCollector<T> {
         return rawValues.isEmpty();
     }
 
-    public Stream<Value<T>> stream() {
+    public Stream<Value<K, T>> stream() {
         return rawValues.stream();
     }
 
-    public Stream<Value<T>> parallelStream() {
+    public Stream<Value<K, T>> parallelStream() {
         return rawValues.parallelStream();
     }
 
-    public boolean add(final Value<T> e) {
+    public boolean add(final Value<K, T> e) {
         return rawValues.add(e);
     }
 
-    public boolean addAll(final Collection<? extends Value<T>> c) {
+    public boolean addAll(final Collection<? extends Value<K, T>> c) {
         return rawValues.addAll(c);
     }
 }

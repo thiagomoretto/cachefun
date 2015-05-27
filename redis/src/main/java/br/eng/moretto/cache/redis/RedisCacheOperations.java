@@ -22,12 +22,12 @@ public class RedisCacheOperations implements CacheOperations {
     }
 
     @Override
-    public <K, T> Value<T> get(final K id, final Mapper<T> mapper) {
+    public <K, T> Value<K, T> get(final K id, final Mapper<T> mapper) {
         Jedis jedis = null;
         try {
             jedis = pool.getResource();
             final String data = jedis.get(String.valueOf(id));
-            return new Value<T>(id, data != null ? mapper.read(data) : null);
+            return new Value<K, T>(id, data != null ? mapper.read(data) : null);
         } catch(final JedisConnectionException jce) {
             if(jedis != null) {
                 pool.returnBrokenResource(jedis);
@@ -39,11 +39,11 @@ public class RedisCacheOperations implements CacheOperations {
                 jedis = null;
             }
         }
-        return new Value<T>(id, null);
+        return new Value<K, T>(id, null);
     }
 
     @Override
-    public <K, T> Value<Void> put(final K id, final T object, final Mapper<T> mapper) {
+    public <K, T> Value<K, Void> put(final K id, final T object, final Mapper<T> mapper) {
         Jedis jedis = null;
         try {
             jedis = pool.getResource();
@@ -59,18 +59,18 @@ public class RedisCacheOperations implements CacheOperations {
                 jedis = null;
             }
         }
-        return new Value<Void>(id, null);
+        return new Value<K, Void>(id, null);
     }
 
     @Override
-    public <T> Values<T> execute(final Commands<T> commands) {
+    public <K, T> Values<K, T> execute(final Commands<K, T> commands) {
         Jedis jedis = null;
         try {
             jedis = pool.getResource();
             final Pipeline pipeline = jedis.pipelined();
-            final Stream<Value<T>> stream
+            final Stream<Value<K, T>> stream
                     = commands.execute(new PipelinedOperations(pipeline));
-            final Collection<Value<T>> values = stream.collect(Collectors.toList());
+            final Collection<Value<K, T>> values = stream.collect(Collectors.toList());
             pipeline.sync();
             return new Values<>(values);
         } catch(final JedisConnectionException jce) {
@@ -96,18 +96,18 @@ public class RedisCacheOperations implements CacheOperations {
         }
 
         @Override
-        public <K, T> Value<T> get(final K key, final Mapper<T> mapper) {
-            return new JedisValue<T>(key, pipeline.get(String.valueOf(key)), mapper);
+        public <K, T> Value<K, T> get(final K key, final Mapper<T> mapper) {
+            return new JedisValue<K, T>(key, pipeline.get(String.valueOf(key)), mapper);
         }
 
         @Override
-        public <K, T> Value<Void> put(final K key, final T object, final Mapper<T> mapper) {
+        public <K, T> Value<K, Void> put(final K key, final T object, final Mapper<T> mapper) {
             pipeline.set(String.valueOf(key), mapper.write(object));
-            return Value.getVoidValue();
+            return new Value<K, Void>(key, null);
         }
 
         @Override
-        public <T> Values<T> execute(final Commands<T> commands) {
+        public <K, T> Values<K, T> execute(final Commands<K, T> commands) {
             return new Values<>(commands.execute(this).collect(Collectors.toList()));
         }
     }

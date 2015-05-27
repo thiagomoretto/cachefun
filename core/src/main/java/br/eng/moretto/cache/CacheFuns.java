@@ -31,9 +31,11 @@ public class CacheFuns<K, T> {
         return Optional.ofNullable(cacheOperations.get(keyMapper.write(id), valMapper).getValue());
     }
 
-    public Values<T> getAll(final Collection<K> ids) {
+    @SuppressWarnings("unchecked")
+    public Values<K, T> getAll(final Collection<K> ids) {
         return cacheOperations.execute(ops -> //
-                ids.stream().map(id -> ops.get(keyMapper.write(id), valMapper)));
+            ids.stream().map(id ->
+                (Value<K, T>) ops.get(keyMapper.write(id), valMapper)));
     }
 
     public void put(final K id, final T object) {
@@ -56,27 +58,22 @@ public class CacheFuns<K, T> {
     }
 
     public Stream<Optional<T>> streamOf(final Collection<K> ids) {
-        final Values<T> values = cacheOperations.execute(ops -> //
-                ids.stream() //
-                   .map(id -> ops.get(keyMapper.write(id), valMapper)));
-        return values.stream().map(t -> Optional.ofNullable(t.getValue()));
+        return getAll(ids).stream().map(t -> Optional.ofNullable(t.getValue()));
     }
 
-    @SuppressWarnings("unchecked")
     public Stream<Optional<T>> streamOf(final Collection<K> ids, final Function<K, Optional<T>> fetch) {
-        final Values<T> values = getAll(ids);
+        final Values<K, T> values = getAll(ids);
         values.stream() //
                 .filter(v -> v.isEmpty()) //
                 .map(v -> { //
-                    fetch.apply((K) v.getKey()) //
-                         .ifPresent(k -> v.collect(k));
+                    fetch.apply(v.getKey()).ifPresent(k -> v.collect(k));
                     return v;
                 }) //
                 .filter(v -> v.isPresent()) //
                 .forEach(v -> { //
                             values.collect(v.getKey(), v.getValue()); //
-                            put((K) v.getKey(), v.getValue()); //
+                            put(v.getKey(), v.getValue()); //
                         });
-        return values.stream().map(t -> Optional.ofNullable(t.getValue()));
+        return values.stream().map(v -> Optional.ofNullable(v.getValue()));
     }
 }

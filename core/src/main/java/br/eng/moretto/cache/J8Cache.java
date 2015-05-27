@@ -6,8 +6,8 @@ import br.eng.moretto.cache.ops.CacheOperations;
 
 public class J8Cache<K, T> implements Cache<K, T> {
     private final CacheOperations cacheOperations;
-    private final Mapper<T> valMapper;
     private final Mapper<K> keyMapper;
+    private final Mapper<T> valMapper;
 
     public J8Cache(final CacheOperations cacheOperations, final Mapper<K> keyMapper, final Mapper<T> valMapper) {
         this.cacheOperations = cacheOperations;
@@ -16,8 +16,9 @@ public class J8Cache<K, T> implements Cache<K, T> {
     }
 
     @Override
-    public Value<T> get(final K id) {
-        return cacheOperations.get(keyMapper.write(id), valMapper);
+    public Value<K, T> get(final K id) {
+        final Value<String, T> raw = cacheOperations.get(keyMapper.write(id), valMapper);
+        return new Value<K, T>(id, raw.getValue());
     }
 
     @Override
@@ -26,16 +27,17 @@ public class J8Cache<K, T> implements Cache<K, T> {
     }
 
     @Override
-    public Values<T> getAll(final Collection<K> ids) {
+    @SuppressWarnings("unchecked")
+    public Values<K, T> getAll(final Collection<K> ids) {
         return cacheOperations.execute(ops -> //
-                ids.stream().map(id -> ops.get(keyMapper.write(id), valMapper)));
+            ids.stream().map(id ->
+                (Value<K, T>) ops.get(keyMapper.write(id), valMapper)));
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public Values<T> getAll(final Collection<K> ids, final FetchMany<T> fetchMany) {
-        final Values<T> values = getAll(ids);
-        final Values<T> missing = new Values<T>();
+    public Values<K, T> getAll(final Collection<K> ids, final FetchMany<K, T> fetchMany) {
+        final Values<K, T> values = getAll(ids);
+        final Values<K, T> missing = new Values<K, T>();
         values.stream() //
                 .filter(v -> v.isEmpty()) //
                 .forEach(v -> missing.add(v)); // added as ref.
@@ -43,15 +45,14 @@ public class J8Cache<K, T> implements Cache<K, T> {
             fetchMany.fetchMany(missing);
             missing.stream() //
                     .filter(v -> v.isPresent()) //
-                    .forEach(v -> put((K)v.getKey(), v.getValue())); // TODO:
+                    .forEach(v -> put(v.getKey(), v.getValue())); // TODO:
         }
         return values;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public Values<T> getAll(final Collection<K> ids, final FetchOne<T> fetchOne) {
-        final Values<T> values = getAll(ids);
+    public Values<K, T> getAll(final Collection<K> ids, final FetchOne<K, T> fetchOne) {
+        final Values<K, T> values = getAll(ids);
         values.stream() //
                 .filter(v -> v.isEmpty()) //
                 .map(v -> { //
@@ -61,14 +62,14 @@ public class J8Cache<K, T> implements Cache<K, T> {
                 .filter(v -> v.isPresent()) //
                 .forEach(v -> { //
                             values.collect(v.getKey(), v.getValue()); //
-                            put((K)v.getKey(), v.getValue()); //
+                            put(v.getKey(), v.getValue()); //
                         });
         return values;
     }
 
     @Override
-    public Value<T> get(final K id, final FetchOne<T> fetchOne) {
-        final Value<T> value = get(id);
+    public Value<K, T> get(final K id, final FetchOne<K, T> fetchOne) {
+        final Value<K, T> value = get(id);
         if (value.isEmpty()) {
             fetchOne.fetchOne(value);
             if (value.isPresent()) {

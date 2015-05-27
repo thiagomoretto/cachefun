@@ -1,26 +1,26 @@
 package br.eng.moretto.cache;
 
 
-public class Value<T> implements ValueCollector<T> {
-    static Value<Void> voidValue = new Value<Void>(null, null);
+public class Value<K, T> implements ValueCollector<T> {
+    static Value<Void, Void> voidValue = new Value<Void, Void>(null, null);
 
-    public static Value<Void> getVoidValue() {
+    public static Value<Void, Void> getVoidValue() {
         return voidValue;
     }
 
-    private Object key;
+    private K key;
     private T value;
 
-    public Value(final Object key) {
+    public Value(final K key) {
         this(key, null);
     }
 
-    public Value(final Object key, final T value) {
+    public Value(final K key, final T value) {
         this.key = key;
         this.value = value;
     }
 
-    public Object getKey() {
+    public K getKey() {
         return key;
     }
 

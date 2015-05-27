@@ -50,7 +50,7 @@ abstract public class BaseCacheTest {
     @Test
     public void testGet() throws Exception {
         cache.put(d("BasicGet:Item1"), new Item("BasicGet:Item1"));
-        final Value<Item> value = cache.get(d("BasicGet:Item1"));
+        final Value<String, Item> value = cache.get(d("BasicGet:Item1"));
 
         assertNotNull(value);
         assertTrue(value.isPresent());
@@ -65,7 +65,7 @@ abstract public class BaseCacheTest {
 
         cacheItems.put(d("BasicGetCollection:Item1"), items);
 
-        final Value<Collection<Item>> value = cacheItems.get(d("BasicGetCollection:Item1"));
+        final Value<String, Collection<Item>> value = cacheItems.get(d("BasicGetCollection:Item1"));
 
         assertNotNull(value);
         assertTrue(value.isPresent());
@@ -79,7 +79,7 @@ abstract public class BaseCacheTest {
     @Test
     public void testGetWithFetchOne() throws Exception {
         cache.put(d("BasicGetFetchOne:Item1"), new Item("BasicGetFetchOne:Item1"));
-        final Value<Item> value = cache.get(d("BasicGetFetchOne:Item1"),
+        final Value<String, Item> value = cache.get(d("BasicGetFetchOne:Item1"),
                 v -> v.collect(new Item("BasicGetFetchOne:Item1")));
 
         assertNotNull(value);
@@ -97,7 +97,7 @@ abstract public class BaseCacheTest {
 
         final Collection<String> keys = Arrays.asList( //
                 d("BasicGetAll:Item1"), d("BasicGetAll:Item2"), d("BasicGetAll:ItemNonExistent"));
-        final Values<Item> values = cache.getAll(keys);
+        final Values<String, Item> values = cache.getAll(keys);
 
         assertEquals(3, values.size());
         assertEquals(2, values.stream().filter(v -> v.isPresent()).count());
@@ -110,7 +110,7 @@ abstract public class BaseCacheTest {
         cache.put(d("FetchMany:Item1"), new Item("Item1"));
         cache.put(d("FetchMany:Item2"), new Item("Item2"));
 
-        final FetchMany<Item> fetcher = (values) -> {
+        final FetchMany<String, Item> fetcher = (values) -> {
             values.collect(d("FetchMany:Item3"), new Item("Item3"));
         };
 
@@ -126,7 +126,7 @@ abstract public class BaseCacheTest {
         cache.put(d("FetchOne:Item1"), new Item("Item1"));
         cache.put(d("FetchOne:Item2"), new Item("Item2"));
 
-        final FetchOne<Item> fetchOne = (v) -> {
+        final FetchOne<String, Item> fetchOne = (v) -> {
             if (d("FetchOne:Item3").equals(String.valueOf(v.getKey()))) {
                 v.collect(new Item("Item3"));
             } else {
@@ -163,7 +163,7 @@ abstract public class BaseCacheTest {
 
         final long initial = System.nanoTime();
 
-        final Values<Item> values = cache.getAll(ids);
+        final Values<String, Item> values = cache.getAll(ids);
 
         final long ns = System.nanoTime() - initial;
         final long ms = ns / 1_000_000;

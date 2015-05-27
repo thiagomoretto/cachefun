@@ -2,8 +2,8 @@ package br.eng.moretto.cache;
 
 
 @FunctionalInterface
-public interface FetchMany<T> {
+public interface FetchMany<K, T> {
 
-    public void fetchMany(Values<T> ids);
+    public void fetchMany(Values<K, T> ids);
 
 }

@@ -82,14 +82,15 @@ public class RedisCacheFunsTest {
     }
 
     @Test
-    public void testStream2() throws Exception {
+    public void testStreamWithSupplier() throws Exception {
         main.put("mKey1", "Value1");
         // Missing mKey2
         main.put("mKey3", "Value3");
+        // Missing mKey4
 
-        assertThat(main.streamOf(Arrays.asList("mKey1", "mKey2", "mKey3"), (id) -> Optional.of("Value2"))
+        assertThat(main.streamOf(Arrays.asList("mKey1", "mKey2", "mKey3", "mKey4"), (id) -> Optional.of("Value2"))
                 .collect(Collectors.toList()))
-                .hasSize(3);
+                .hasSize(4);
     }
 
     // Caches

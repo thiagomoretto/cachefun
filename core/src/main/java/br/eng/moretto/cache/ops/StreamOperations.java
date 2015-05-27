@@ -6,6 +6,6 @@ import br.eng.moretto.cache.Values;
 
 public interface StreamOperations {
 
-    public <T> Values<T> execute(Commands<T> commands);
+    public <K, T> Values<K, T> execute(Commands<K, T> commands);
 
 }
