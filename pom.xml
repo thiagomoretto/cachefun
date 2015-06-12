@@ -28,7 +28,7 @@
   <scm>
     <connection>scm:git:git@github.com:thiagomoretto/cachefun.git</connection>
     <developerConnection>scm:git:git@github.com:thiagomoretto/cachefun.git</developerConnection>
-    <url>git@github.com:thiagomoretto/cachefun.git</url>
+    <url>https://github.com/thiagomoretto/cachefun</url>
   </scm>
 
   <repositories>
